@@ -132,11 +132,12 @@ fn render_hole(hole: &Hole) -> Option<()> {
             eprintln!("{}", line);
         }
     }
+    max_span_len -= 1;
 
     for (name, ty) in &hole.args {
         eprintln!(
             "{:>max_span_len$} {}{}",
-            "= ".bright_blue(),
+            "=".bright_blue(),
             "note".bright_white(),
             format!(": {} is `{}`", name, ty),
             max_span_len=max_span_len

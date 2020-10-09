@@ -4,10 +4,10 @@ pub use paste as __paste;
 #[cfg(not(what_query))]
 #[macro_export]
 macro_rules! what {
-    ($($args:expr),* $(,)*) => {
+    ($($args:ident),* $(,)*) => {
         ({
             $(
-            let _ = $args;
+                let _ = $args;
             )*
             todo!()
         })
@@ -18,7 +18,7 @@ macro_rules! what {
 #[cfg(what_query)]
 #[macro_export]
 macro_rules! what {
-    ($($args:expr),* $(,)*) => {
+    ($($args:ident),* $(,)*) => {
         ({
             todo!();
 
