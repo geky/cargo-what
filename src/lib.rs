@@ -32,9 +32,9 @@ macro_rules! what {
                 )*
 
                 trait What {};
-                let _v;
-                let _: &dyn What = &_v;
-                _v
+                let what;
+                let _: &dyn What = &what;
+                what
             }
         })
     }

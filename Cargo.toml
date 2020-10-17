@@ -28,6 +28,9 @@ lazy_static = {version="1.4", optional=true}
 term = {version="0.4", optional=true}
 colored = {version="2.0", optional=true}
 
+[dev-dependencies]
+anyhow = "1.0"
+
 [features]
 build-binary = [
     "anyhow",

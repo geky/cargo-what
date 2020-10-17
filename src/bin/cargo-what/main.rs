@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::thread;
 use std::cmp;
+use std::ffi;
 
 use anyhow::anyhow;
 use atty;
@@ -149,46 +150,71 @@ fn render_hole(hole: &Hole) -> Option<()> {
     Some(())
 }
 
+// helper to add conditional args
+trait CommandExt {
+    fn arg_if<S: AsRef<ffi::OsStr>>(
+        &mut self,
+        pred: bool,
+        arg: S
+    ) -> &mut Self;
+}
+
+impl CommandExt for process::Command {
+    fn arg_if<S: AsRef<ffi::OsStr>>(
+        &mut self,
+        pred: bool,
+        arg: S
+    ) -> &mut Self {
+        if pred {
+            self.arg(arg)
+        } else {
+            self
+        }
+    }
+}
 
 fn what(args: std::env::Args) -> anyhow::Result<()> {
     // get args, but also remove "cargo" and "what"
-    let mut seen_dash_dash = false;
-    let args: Vec<_> = args
-        .skip(1)
-        .filter(|arg| {
-            if arg == "--" {
-                seen_dash_dash = true;
+    let mut seenwhat: bool = false;
+    let mut dashdash: Option<usize> = None;
+    let mut color: Option<bool> = None;
+    let mut filteredargs: Vec<String> = Vec::new();
+    for (i, arg) in args.skip(1).enumerate() {
+        match arg.as_str() {
+            _ if dashdash.is_some() => {
+                filteredargs.push(arg);
             }
-            seen_dash_dash || arg != "what"
-        })
-        .collect();
-
-    // catch version
-    if args.iter().any(|arg| arg == "--version") {
-        println!("cargo-what {}", env!("CARGO_PKG_VERSION"));
-        return Ok(());
-    }
-
-    // catch --message-format (breaks things)
-    if args.iter().any(|arg| arg.starts_with("--message-format")) {
-        return Err(anyhow!("--message-format not supported"));
+            "what" if !seenwhat => {
+                // skip
+                seenwhat = true;
+            },
+            "--" => {
+                dashdash = Some(i);
+            }
+            "--version" => {
+                // catch version
+                println!("cargo-what {}", env!("CARGO_PKG_VERSION"));
+                return Ok(());
+            }
+            arg if arg.starts_with("--color") => {
+                if arg.find("always").is_some() {
+                    color = Some(true);
+                } else if arg.find("never").is_some() {
+                    color = Some(false);
+                }
+            }
+            arg if arg.starts_with("--messsage-format") => {
+                // catch --message-format (breaks things)
+                return Err(anyhow!("--message-format not supported"));
+            }
+            _ => {
+                filteredargs.push(arg);
+            }
+        }
     }
 
     // need color?
-    let color = args.iter().find_map(|arg| {
-            if arg.starts_with("--color") {
-                if arg.find("always").is_some() {
-                    Some(true)
-                } else if arg.find("never").is_some() {
-                    Some(false)
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        })
-        .unwrap_or_else(|| {
+    let color = color.unwrap_or_else(|| {
             atty::is(atty::Stream::Stderr)
         });
     colored::control::set_override(color);
@@ -199,15 +225,9 @@ fn what(args: std::env::Args) -> anyhow::Result<()> {
     // run cargo build
     let mut build = process::Command::new("cargo")
         .arg("build")
-        .args(&args)
+        .args(&filteredargs)
         .arg("--message-format=json")
-        .args(
-            if color && !args.iter().any(|arg| arg.starts_with("--color")) {
-                &["--color=always"][..]
-            } else {
-                &[][..]
-            }
-        )
+        .arg_if(color, "--color=always")
         .stdout(process::Stdio::piped())
         .stderr(process::Stdio::piped())
         .spawn()?;
