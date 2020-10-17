@@ -1,7 +1,7 @@
 What!
 =====
 
-This crate is a sort of expiriment in type-driven development.
+This crate is a sort of experiment in type-driven development.
 
 This crate provides the `what!` macro, which very similar to Rust's `todo!`
 macro.

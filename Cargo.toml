@@ -1,7 +1,15 @@
 [package]
-name = "what"
+name = "cargo-what"
 version = "0.1.0"
 edition = "2018"
+authors = ["Christopher Haster <chaster@utexas.edu>"]
+license = "MIT"
+
+description = "Tells you what type things are"
+readme = "README.md"
+repository = "https://github.com/geky/cargo-what"
+keywords = ["macro", "todo", "debug"]
+categories = ["command-line-utilities", "development-tools::debugging"]
 
 [[bin]]
 name = "cargo-what"
