@@ -1,3 +1,4 @@
+#[doc(hidden)]
 pub use paste as __paste;
 
 // cargo build => todo
