@@ -220,7 +220,7 @@ fn what(args: std::env::Args) -> anyhow::Result<()> {
     colored::control::set_override(color);
 
     // we are running in cargo what
-    env::set_var("WHAT_QUERY", "1");
+    env::set_var("CARGO_WHAT_QUERY", "1");
 
     // run cargo build
     let mut build = process::Command::new("cargo")

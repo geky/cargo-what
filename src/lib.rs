@@ -2,7 +2,7 @@
 pub use paste as __paste;
 
 // cargo build => todo
-#[cfg(not(what_query))]
+#[cfg(not(cargo_what_query))]
 #[macro_export]
 macro_rules! what {
     ($($args:ident),* $(,)*) => {
@@ -16,7 +16,7 @@ macro_rules! what {
 }
 
 // cargo what => query type info
-#[cfg(what_query)]
+#[cfg(cargo_what_query)]
 #[macro_export]
 macro_rules! what {
     ($($args:ident),* $(,)*) => {
