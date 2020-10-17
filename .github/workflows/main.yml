@@ -1,0 +1,13 @@
+name: test
+on: [push, pull_request]
+
+env:
+  # enable Werror
+  RUSTFLAGS: --deny warnings
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v2
+        - run: cargo test --features=build-binary
