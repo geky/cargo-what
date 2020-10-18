@@ -223,6 +223,13 @@ fn what(args: std::env::Args) -> anyhow::Result<()> {
                 println!("cargo-what {}", env!("CARGO_PKG_VERSION"));
                 return Ok(());
             }
+            "-h" | "--help" => {
+                // catch help, kinda
+                process::Command::new("cargo").arg("build")
+                    .arg("--help")
+                    .status()?;
+                return Ok(());
+            }
             arg if arg.starts_with("--color") => {
                 if arg.find("always").is_some() {
                     color = Some(true);

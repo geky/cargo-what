@@ -29,7 +29,7 @@ fn examples() -> anyhow::Result<Vec<String>> {
 //
 // (compiling without what already happens with cargo's default
 // example building)
-#[cfg_attr(not(feature = "build-binary"), ignore)]
+#[cfg_attr(not(feature = "build-bin"), ignore)]
 #[test]
 fn cargo_what() -> anyhow::Result<()> {
     for example in examples()? {

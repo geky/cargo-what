@@ -10,4 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
         - uses: actions/checkout@v2
-        - run: cargo test --features=build-binary
+        - run: cargo test --features=build-bin
