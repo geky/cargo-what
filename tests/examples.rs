@@ -25,7 +25,6 @@ fn examples() -> anyhow::Result<Vec<String>> {
     Ok(paths)
 }
 
-
 // compile with what
 //
 // (compiling without what already happens with cargo's default

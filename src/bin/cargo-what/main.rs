@@ -19,6 +19,7 @@ use colored::Colorize;
 #[derive(Debug)]
 struct Hole {
     ty: Option<String>,
+    tr: Option<String>,
     args: Vec<(String, String)>,
     file: String,
     line: usize,
@@ -50,14 +51,20 @@ fn parse_hole(
     // parse out expected type
     lazy_static! {
         static ref TYPE_PATTERN: regex::Regex = regex::Regex::new(
-            r"`(.*): .*::What(?:_([[:word:]]*))?`"
+            "(?:\
+                `(.*): .*::What(?:_([[:word:]]*))?`\
+                |`.*::WhatTrait: (.*)`\
+                |`.*::WhatTrait` doesn't implement `(.*)`\
+                |expected.*`(.*)`.*found `.*`\
+            )"
         ).unwrap();
     }
 
     let short = message.get("message")?.as_str()?;
     let ma = TYPE_PATTERN.captures(short)?;
-    let ty = ma.get(1)?.as_str();
-    let arg = ma.get(2).map(|arg| arg.as_str());
+    let ty = ma.get(1);
+    let arg = ma.get(2);
+    let tr = ma.get(3).or(ma.get(4)).or(ma.get(5));
 
     let long = message.get("rendered")?.as_str()?;
     let long = long.lines()
@@ -73,6 +80,7 @@ fn parse_hole(
     let hole = holes.entry((String::from(file), line)).or_insert_with(|| {
         Hole {
             ty: None,
+            tr: None,
             args: Vec::new(),
             file: String::from(file),
             line: line,
@@ -80,10 +88,22 @@ fn parse_hole(
         }
     });
 
-    if let Some(arg) = arg {
-        hole.args.push((String::from(arg), String::from(ty)));
-    } else {
-        hole.ty = Some(String::from(ty));
+    match (arg, ty, tr) {
+        (Some(arg), Some(ty), _) => {
+            hole.args.push((
+                String::from(arg.as_str()),
+                String::from(ty.as_str())
+            ));
+        }
+        (_, Some(ty), _) => {
+            hole.ty = Some(String::from(ty.as_str()));
+        }
+        (_, _, Some(tr)) => {
+            hole.tr = Some(String::from(tr.as_str()));
+        }
+        _ => {
+            // do nothing (bad parse?)
+        }
     }
 
     Some(())
@@ -102,7 +122,14 @@ fn render_hole(hole: &Hole) -> Option<()> {
     eprintln!(
         "{}{}",
         "hole".bright_magenta(),
-        format!(": expecting `{}`", hole.ty.as_ref()?).bright_white()
+        format!(
+            ": expecting `{}`",
+            match (&hole.ty, &hole.tr) {
+                (Some(ty), _) => format!("{}", ty),
+                (_, Some(tr)) => format!("impl {}", tr),
+                _             => format!("_"),
+            }
+        ).bright_white()
     );
 
     let lines: Vec<_> = hole.context.lines().collect();

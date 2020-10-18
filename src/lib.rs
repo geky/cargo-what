@@ -33,9 +33,18 @@ macro_rules! what {
                 )*
 
                 trait What {};
-                let what;
-                let _: &dyn What = &what;
-                what
+                match true {
+                    true => {
+                        let what;
+                        let _: &dyn What = &what;
+                        what
+                    }
+                    false => {
+                        struct WhatTrait {};
+                        impl What for WhatTrait {};
+                        WhatTrait{}
+                    }
+                }
             }
         })
     }
