@@ -59,7 +59,7 @@ fn parse_hole(
             )"
         ).unwrap();
         static ref SITE_PATTERN: regex::Regex = regex::Regex::new(
-            "what!\\([^@]"
+            "what!\\((?:[^@]|$)"
         ).unwrap();
     }
 
@@ -157,7 +157,7 @@ fn render_hole(hole: &Hole) -> Option<()> {
 
     let lines: Vec<_> = hole.context.lines().collect();
     let mut max_span_len = 0;
-    for (i, line) in lines.iter().enumerate() {
+    for (i, line) in lines.iter().take(3).enumerate() {
         let squiggle = if i == lines.len()-1 {
             SQUIGGLE_PATTERN.find(line)
         } else {
@@ -185,6 +185,37 @@ fn render_hole(hole: &Hole) -> Option<()> {
     }
     max_span_len -= 1;
 
+    let squiggle = lines.get(3)
+        .and_then(|line| {
+            SQUIGGLE_PATTERN.find(line)
+                .map(|ma| match ma.range() {
+                    squiggle if squiggle.len() == 1 => {
+                        squiggle.start..lines[2].len()
+                    }
+                    squiggle => {
+                        squiggle
+                    }
+                })
+        });
+
+    if let Some(squiggle) = squiggle {
+        eprintln!(
+            "{:>max_span_len$}{:>squiggle_len$}",
+            "|".bright_blue(),
+            "^".repeat(squiggle.len()).bright_magenta(),
+            max_span_len=max_span_len,
+            squiggle_len=squiggle.end-max_span_len
+        );
+    }
+
+    if hole.args.len() > 0 {
+        eprintln!(
+            "{:>max_span_len$}",
+            "|".bright_blue(),
+            max_span_len=max_span_len
+        );
+    }
+
     for (name, ty) in &hole.args {
         eprintln!(
             "{:>max_span_len$} {}{}",
@@ -192,7 +223,7 @@ fn render_hole(hole: &Hole) -> Option<()> {
             "note".bright_white(),
             format!(": {} is `{}`", name, ty),
             max_span_len=max_span_len
-        )
+        );
     }
 
     eprintln!();
