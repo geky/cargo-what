@@ -10,4 +10,8 @@ fn main() {
 
     let a: Result<&dyn std::any::Any, Box<dyn std::error::Error>> = Ok(&1u8);
     what!(a);
+
+    what!(1u8, 2u16, 3u32, 4u64);
+
+    what!(1u8+1, Some(2u16), &3u32);
 }

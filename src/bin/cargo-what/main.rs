@@ -52,18 +52,26 @@ fn parse_hole(
     lazy_static! {
         static ref TYPE_PATTERN: regex::Regex = regex::Regex::new(
             "(?:\
-                `(.*): .*::What(?:_([[:word:]]*))?`\
+                `(.*): .*::What(?:_([a-zA-Z_][a-zA-Z_0-9]*)|_(0+))?`\
                 |`.*::WhatTrait: (.*)`\
                 |`.*::WhatTrait` doesn't implement `(.*)`\
                 |expected.*`(.*)`.*found `.*`\
             )"
         ).unwrap();
+        static ref SITE_PATTERN: regex::Regex = regex::Regex::new(
+            "what!\\([^@]"
+        ).unwrap();
     }
 
     let short = message.get("message")?.as_str()?;
     let ma = TYPE_PATTERN.captures(short)?;
+    let arg = ma.get(2)
+        .map(|arg| format!("{}", arg.as_str()))
+        .or_else(|| {
+            ma.get(3)
+                .map(|arg| format!("{}", arg.range().len()-1))
+        });
     let ty = ma.get(1);
-    let arg = ma.get(2);
     let tr = ma.get(3).or(ma.get(4)).or(ma.get(5));
 
     let long = message.get("rendered")?.as_str()?;
@@ -72,7 +80,25 @@ fn parse_hole(
         .collect::<Vec<_>>()
         .join("\n");
 
-    let span = message.get("spans")?.get(0)?.get("expansion")?.get("span")?;
+    let mut span = message.get("spans")?.get(0)?;
+    let is_call_site = |span: &serde_json::Value| -> bool {
+        span.get("text")
+            .and_then(|span| span.as_array())
+            .filter(|span| {
+                span.iter()
+                    .any(|text| {
+                        text.get("text")
+                            .and_then(|text| text.as_str())
+                            .filter(|text| SITE_PATTERN.is_match(text))
+                            .is_some()
+                    })
+            })
+            .is_some()
+    };
+    while !is_call_site(span) {
+        span = span.get("expansion")?.get("span")?;
+    }
+
     let file = span.get("file_name")?.as_str()?;
     let line = usize::try_from(span.get("line_start")?.as_u64()?).ok()?;
 
@@ -90,10 +116,7 @@ fn parse_hole(
 
     match (arg, ty, tr) {
         (Some(arg), Some(ty), _) => {
-            hole.args.push((
-                String::from(arg.as_str()),
-                String::from(ty.as_str())
-            ));
+            hole.args.push((arg, String::from(ty.as_str())));
         }
         (_, Some(ty), _) => {
             hole.ty = Some(String::from(ty.as_str()));
