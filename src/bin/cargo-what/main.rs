@@ -55,7 +55,7 @@ fn parse_hole(
                 `(.*): .*::What(?:_([a-zA-Z_][a-zA-Z_0-9]*)|_(0+))?`\
                 |`.*::WhatTrait: (.*)`\
                 |`.*::WhatTrait` doesn't implement `(.*)`\
-                |expected.*`(.*)`.*found `.*`\
+                |expected.*`(.*)`.*found `.*::WhatTrait`\
             )"
         ).unwrap();
         static ref SITE_PATTERN: regex::Regex = regex::Regex::new(
@@ -72,7 +72,7 @@ fn parse_hole(
                 .map(|arg| format!("{}", arg.range().len()-1))
         });
     let ty = ma.get(1);
-    let tr = ma.get(3).or(ma.get(4)).or(ma.get(5));
+    let tr = ma.get(4).or(ma.get(5)).or(ma.get(6));
 
     let long = message.get("rendered")?.as_str()?;
     let long = long.lines()

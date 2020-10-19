@@ -17,6 +17,11 @@ macro_rules! macro2 {
 #[allow(unused_variables)]
 fn main() {
     let a = 1u8;
+    //= `u32`
+    //= a is `u8`
     macro1!(what!(a));
+
+    //= `u32`
+    //= . is `u8`
     macro2!(a);
 }
